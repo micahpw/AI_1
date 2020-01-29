@@ -1,11 +1,29 @@
+
+"""
+Created on Thu Jan  3 14:24:06 2019
+
+@author: Micah Webb
+
+This program implements A* for solving a sliding tile puzzle
+"""
+
+print('Artificial Intelligence')
+print('MP1: A* for Sliding Puzzle')
+print('SEMESTER: Spring 2020')
+print('NAME: Micah Webb')
 #%%
 import numpy as np
 import queue
 
-I = np.fromfile('./mp1input.txt', sep=' ', dtype=int).reshape(3,3)
+difficulty = 3
 
-G = np.array([[0,1,2],[3,4,5],[6,7,8]])
+I = np.fromfile('./mp1input.txt', sep=' ', dtype=int).reshape(difficulty,difficulty)
 
+
+G = np.arange(0,difficulty*difficulty).reshape(difficulty, difficulty)
+
+print(G)
+#%%
 
 class Edge():
     def __init__(self,conf, pathstring):
@@ -38,11 +56,11 @@ class Edge():
         moves = []
         row, col = self.empty[0], self.empty[1]
 
-        if row < 2:
+        if row < difficulty-1:
             moves.append('D')
         if row > 0: 
             moves.append('U')
-        if col < 2:
+        if col < difficulty-1:
             moves.append('R')
         if col > 0: 
             moves.append('L')
@@ -56,16 +74,18 @@ class Edge():
 
 
 
-def PrintTransformations(InitialState, pathstring):
+def PrintSolution(InitialState, pathstring):
     puzzle = Edge(InitialState, pathstring)
+    print("START")
     print(puzzle.state)
+    map = {'U':'up','D':'down', 'L':'left', 'R': 'right'}
     for i in range(0, len(pathstring)):
         move = pathstring[i]
         state = puzzle.Expand(move)
         puzzle = Edge(state, pathstring)
-
+        s = "Move {m} ACTION: {a}".format(m = i, a = map[move])
+        print(s)
         print(puzzle.state)
-        
 
 
 class Solver():
@@ -93,7 +113,7 @@ class Solver():
         dist = self.g(InitialState)
         if dist == 0:
             print("initialized state matches goal state, problem solved!")
-            PrintTransformations(InitialState, "")        
+            PrintSolution(InitialState, "")        
             return
         else:        
 
@@ -115,16 +135,17 @@ class Solver():
                         VisitedStates.add(hash)
                         mdist = self.g(new_node.state)
                         if mdist > 0:
-                            new_distance = len(new_node.path)/2 + mdist + n*0.0000001 # added n * 0.001 for tiebreaking, defaults to FIFO for equal scores
+                            new_distance = len(new_node.path)+ mdist + n*0.0000001 # added n * 0.001 for tiebreaking, defaults to FIFO for equal scores
                             n += 1
                             priority_queue.put((new_distance, new_node)) 
-                            print(new_distance)
-                        else:                    
-                            print('problem solved')                    
-                            PrintTransformations(InitialState, new_node.path)
+                            if n%10000 == 0:
+                                print(new_distance, n, mdist)                        
+                        else:                                       
+                            PrintSolution(InitialState, new_node.path)
+                            print("Number of States Visited = {s}".format(s = len(VisitedStates)))
                             return
 
-
+            print("exiting solver")            
 
 PuzzleSolver = Solver(G)
 
