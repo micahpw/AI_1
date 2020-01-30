@@ -22,7 +22,6 @@ I = np.fromfile('./mp1input.txt', sep=' ', dtype=int).reshape(difficulty,difficu
 
 G = np.arange(0,difficulty*difficulty).reshape(difficulty, difficulty)
 
-print(G)
 #%%
 
 class Edge():
@@ -76,17 +75,17 @@ class Edge():
 
 def PrintSolution(InitialState, pathstring):
     puzzle = Edge(InitialState, pathstring)
-    print("START")
+    print('\nSTART')
     print(puzzle.state)
     map = {'U':'up','D':'down', 'L':'left', 'R': 'right'}
     for i in range(0, len(pathstring)):
         move = pathstring[i]
         state = puzzle.Expand(move)
         puzzle = Edge(state, pathstring)
-        s = "Move {m} ACTION: {a}".format(m = i, a = map[move])
+        s = "Move {m} ACTION: {a}".format(m = i+1, a = map[move])
         print(s)
         print(puzzle.state)
-
+    print()
 
 class Solver():
     def __init__(self, Goal):
