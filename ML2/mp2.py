@@ -143,8 +143,8 @@ class GenGameBoard:
             
         AvailableMoves = np.argwhere(self.marks == ' ')   
     
-        players = ['X', 'O']
-        alphabeta = [-1, 1] #Minimizing, Maximing player bit
+        players = ['X', 'O'] #Minimizing, Maximizing player label
+        alphabeta = [-1, 1] #Minimizing, Maximizing player bit
 
         spaces_taken = self.marks.shape[0]**2 - AvailableMoves.shape[0]
 
