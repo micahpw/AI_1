@@ -1,6 +1,10 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
+Created on 02/26/2020
+
+@author: mwebb
+
 Program checks if there are possible schedules for students for a given
 start and finish term, given all constraints.
 This works by mapping a term number to each course, given all constraints.
@@ -46,6 +50,20 @@ def prereq(a, b):
     else:
         return True # Not taking prereq a or course b
 
+
+
+#Make  surre only 3 electives are taken
+def numelectives(e1,e2,e3,e4,e5,e6,e7,e8):    
+        elective_values = np.array([e1,e2,e3,e4,e5,e6,e7,e8])
+        cnt = np.where(elective_values > 0)[0] #Count electives 
+
+        if cnt.size == 3:
+            return True
+        else:
+            return False
+
+
+
 def get_possible_course_list(start, finish):
     '''Returns a possible course schedule, assuming student starts in start term
        finishes in finish term'''
@@ -55,34 +73,45 @@ def get_possible_course_list(start, finish):
     course_offerings = pd.read_excel('csp_course_rotations.xlsx', sheet_name='course_rotations')
     course_prereqs = pd.read_excel('csp_course_rotations.xlsx', sheet_name='prereqs')
 
-    # Foundation course terms
-    foundation_courses = course_offerings[course_offerings.Type=='foundation']
-    for r,row in foundation_courses.iterrows():
-        problem.addVariable(row.Course, create_term_list(list(row[row==1].index)))
+    # nonelective course terms/must take
+    nonelective_courses = course_offerings[course_offerings.Type !='elective']
+    for r,row in nonelective_courses.iterrows():        
+        problem.addVariable(row.Course, create_term_list(list(row[row==1].index)))           
+        problem.addConstraint(FunctionConstraint(lambda x: 1 <= x <=14) , [row.Course]) #Make sure course is taken before year 3 fall2 
 
-    """ TODO FROM HERE... """    
-    # Core course terms
-    
-    
-    # CS Electives course terms (-x = elective not taken)
 
-    
-    # Capstone
-    
-    
-    # Guarantee no repeats of courses
 
-    
-    # Control start and finish terms
+    # Elective courses are optional, pass extra negative values as placeholders for not taking a class
+    elective_courses = course_offerings[course_offerings.Type=='elective']
+        
+    for r,row in elective_courses.iterrows():  
+        term_list = create_term_list(list(row[row==1].index)).copy()
+        nullable_term_list = [-1,-2,-3,-4,-5] #include more negatives so the AllDifferentConstraint works
+        nullable_term_list.extend(term_list)
+        problem.addVariable(row.Course, nullable_term_list) 
+        problem.addConstraint(FunctionConstraint(lambda x:  x <=14), [row.Course]) #Make sure courses are taken before year3 fall2 or not taken
 
     
-    # Control electives - exactly 3 courses must be chosen
+
+    #Control total electives - exactly 3 courses must be chosen
+    #Pass all elective values to function to count up positive values (courses taken)
+    electives = elective_courses.Course.values.tolist() 
+    problem.addConstraint(FunctionConstraint(numelectives), variables = electives )
+    
+
+    #Prereqs
+    for r, row in course_prereqs.iterrows():
+        problem.addConstraint(FunctionConstraint(prereq), [row['prereq'], row['course']])
 
     
-    # Prereqs    
+    #All Different implies no two courses are taken in the same semester. 
+    #By Default a variable (e.g. class #) won't take on two values at once as in taking the course twice
+    problem.addConstraint(AllDifferentConstraint())
+    
+    # Control start and finish terms    
+    problem.addConstraint(SomeInSetConstraint([1,14])) #Make sure first and last semester are always part of solution
     
     
-    """ ...TO HERE """
     
     # Generate a possible solution
     sol = problem.getSolutions()
@@ -92,7 +121,7 @@ def get_possible_course_list(start, finish):
 
 # Print heading
 print("CLASS: Artificial Intelligence, Lewis University")
-print("NAME: [put your name here]")
+print("NAME: Micah Webb")
 
 # Check for possible schedules for all start terms
 for start in [1]:
